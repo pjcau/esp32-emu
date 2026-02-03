@@ -59,19 +59,35 @@ Questo progetto documenta la costruzione di una console portatile per emulare si
 - **Prezzo**: ~1 EUR (32GB)
 - **Link**: [AliExpress](https://it.aliexpress.com/item/1005007498167692.html)
 
-### Costo Totale Stimato: ~36 EUR
+### Costo Hardware Totale: 35 EUR
 
 ## Case/Scocca 3D
 
 Per la scocca stampata in 3D, utilizzo il modello "ESPlay Micro V2 Case" di PierreGG.
 
 - **Link Thingiverse**: [ESPlay Micro V2 Case](https://www.thingiverse.com/thing:5592683)
+- **File 3D**: Inclusi in questo repository ([3d-files.zip](3d-files.zip))
 - **Software utilizzato**: Fusion360
 - **Licenza**: Creative Commons BY 4.0
+
+### Stampa 3D
+
+Ho utilizzato un **servizio di stampa 3D online** per la realizzazione del case.
+
+- **Costo stampa**: 30 EUR
+- Include tutti i pezzi necessari per il case
 
 ### Materiali Necessari per il Case
 - 4x viti M3 da 15mm
 - Protettore schermo (opzionale): taglio laser su acrilico 3mm (file SVG incluso)
+
+## Riepilogo Costi
+
+| Voce | Costo |
+|------|-------|
+| Hardware (ESPlay + Batteria + SD) | 35 EUR |
+| Stampa 3D Case | 30 EUR |
+| **Totale Progetto** | **65 EUR** |
 
 ## Risorse e Link Utili
 
