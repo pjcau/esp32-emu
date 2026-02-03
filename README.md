@@ -27,19 +27,19 @@ Questo progetto documenta la costruzione di una console portatile per emulare si
 
 ## Specifiche Tecniche (ESPlay Micro)
 
-| Componente | Specifica |
-|------------|-----------|
-| Processore | ESP32 WROVER dual-core |
-| Flash | 4MB integrato |
-| PSRAM | 4MB integrato |
-| Display | 2.4" ILI9341 TFT Panel |
-| Audio DAC | UDA1334A I2S |
-| Jack Audio | 3.5mm |
-| Storage | Slot microSD (SDMMC 1-line) |
-| Caricatore | TP4056 Li-Po integrato |
-| USB-Serial | CH340C |
-| Dimensioni PCB | 100 x 50 mm |
-| Porta Espansione | I2C |
+| Componente       | Specifica                   |
+| ---------------- | --------------------------- |
+| Processore       | ESP32 WROVER dual-core      |
+| Flash            | 4MB integrato               |
+| PSRAM            | 4MB integrato               |
+| Display          | 2.4" ILI9341 TFT Panel      |
+| Audio DAC        | UDA1334A I2S                |
+| Jack Audio       | 3.5mm                       |
+| Storage          | Slot microSD (SDMMC 1-line) |
+| Caricatore       | TP4056 Li-Po integrato      |
+| USB-Serial       | CH340C                      |
+| Dimensioni PCB   | 100 x 50 mm                 |
+| Porta Espansione | I2C                         |
 
 ## Lista Componenti da Acquistare
 
@@ -66,7 +66,7 @@ Questo progetto documenta la costruzione di una console portatile per emulare si
 Per la scocca stampata in 3D, utilizzo il modello "ESPlay Micro V2 Case" di PierreGG.
 
 - **Link Thingiverse**: [ESPlay Micro V2 Case](https://www.thingiverse.com/thing:5592683)
-- **File 3D**: Inclusi in questo repository ([3d-files.zip](3d-files.zip))
+- **File 3D**: Inclusi in questo repository ([model3d/](model3d/))
 - **Software utilizzato**: Fusion360
 - **Licenza**: Creative Commons BY 4.0
 
@@ -83,19 +83,19 @@ Ho utilizzato un **servizio di stampa 3D online** per la realizzazione del case.
 
 ## Riepilogo Costi
 
-| Voce | Costo |
-|------|-------|
-| Hardware (ESPlay + Batteria + SD) | 35 EUR |
-| Stampa 3D Case | 30 EUR |
-| **Totale Progetto** | **65 EUR** |
+| Voce                              | Costo      |
+| --------------------------------- | ---------- |
+| Hardware (ESPlay + Batteria + SD) | 35 EUR     |
+| Stampa 3D Case                    | 30 EUR     |
+| **Totale Progetto**               | **65 EUR** |
 
 ## Risorse e Link Utili
 
-| Risorsa | Link |
-|---------|------|
-| Firmware ESPlay | [GitHub - pebri86/esplay-retro-emulation](https://github.com/pebri86/esplay-retro-emulation) |
-| Documentazione Ufficiale | [Makerfabs - ESPlay Micro](https://www.makerfabs.com/esplay-micro.html) |
-| Case 3D | [Thingiverse - ESPlay Micro V2 Case](https://www.thingiverse.com/thing:5592683) |
+| Risorsa                  | Link                                                                                         |
+| ------------------------ | -------------------------------------------------------------------------------------------- |
+| Firmware ESPlay          | [GitHub - pebri86/esplay-retro-emulation](https://github.com/pebri86/esplay-retro-emulation) |
+| Documentazione Ufficiale | [Makerfabs - ESPlay Micro](https://www.makerfabs.com/esplay-micro.html)                      |
+| Case 3D                  | [Thingiverse - ESPlay Micro V2 Case](https://www.thingiverse.com/thing:5592683)              |
 
 ## Istruzioni di Build del Firmware
 
@@ -144,8 +144,8 @@ Ho utilizzato un **servizio di stampa 3D online** per la realizzazione del case.
 
 ## TODO
 
-- [ ] Ordinare i componenti
-- [ ] Stampare il case 3D
+- [x] Ordinare i componenti
+- [x] Stampare il case 3D
 - [ ] Assemblare l'hardware
 - [ ] Flashare il firmware
 - [ ] Testare gli emulatori
