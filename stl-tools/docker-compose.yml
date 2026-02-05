@@ -1,0 +1,132 @@
+services:
+  # Step 1: Analyze STL files for wall thickness
+  stl-analyzer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: stl-mesh-analyzer
+    volumes:
+      - ./scripts:/app/scripts:ro
+      - ./output:/app/output
+      - ./logs:/app/logs
+      - "../model3d/ESPlay micro v2 case - 5592683/files:/app/input:ro"
+      - ./reference:/app/reference:ro
+    environment:
+      - MIN_WALL_THICKNESS=1.0
+      - NUM_SAMPLES=15000
+      - PYOPENGL_PLATFORM=osmesa
+    command: ["python", "/app/scripts/main.py"]
+
+  # Step 2: Fix wall thickness issues
+  stl-fix:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: stl-mesh-fixer
+    volumes:
+      - ./scripts:/app/scripts:ro
+      - ./output:/app/output
+      - ./logs:/app/logs
+      - "../model3d/ESPlay micro v2 case - 5592683/files:/app/input:ro"
+      - ./reference:/app/reference:ro
+    environment:
+      - MIN_WALL_THICKNESS=1.0
+      - PRESERVE_CENTERS=true
+      - FIX_METHOD=auto
+      - PYOPENGL_PLATFORM=osmesa
+    command: ["python", "/app/scripts/fix_thickness.py"]
+    profiles:
+      - fix
+
+  # Step 3: Verify parts still fit together
+  stl-verify:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: stl-mesh-verifier
+    volumes:
+      - ./scripts:/app/scripts:ro
+      - ./output:/app/output
+      - ./logs:/app/logs
+      - "./reference:/app/reference:ro"
+    environment:
+      - MIN_WALL_THICKNESS=1.0
+      - PYOPENGL_PLATFORM=osmesa
+    command: ["python", "/app/scripts/verify_fit.py"]
+    profiles:
+      - verify
+
+  # Step 4: Generate render comparisons (before/after)
+  stl-render:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: stl-mesh-renderer
+    volumes:
+      - ./scripts:/app/scripts:ro
+      - ./output:/app/output
+      - ./logs:/app/logs
+      - "../model3d/ESPlay micro v2 case - 5592683/files:/app/input:ro"
+      - ./reference:/app/reference:ro
+    environment:
+      - PYOPENGL_PLATFORM=osmesa
+    command: ["xvfb-run", "-a", "python", "/app/scripts/render_comparison.py"]
+    profiles:
+      - render
+
+  # Step 5: Generate assembly simulation animations
+  stl-simulate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: stl-mesh-simulator
+    volumes:
+      - ./scripts:/app/scripts:ro
+      - ./output:/app/output
+      - ./logs:/app/logs
+      - "../model3d/ESPlay micro v2 case - 5592683/files:/app/input:ro"
+      - ./reference:/app/reference:ro
+    environment:
+      - PYOPENGL_PLATFORM=osmesa
+    command: ["xvfb-run", "-a", "python", "/app/scripts/assembly_simulation.py"]
+    profiles:
+      - simulate
+
+  # Step 6: Verify alignment with hardware reference (screws, PCB, etc.)
+  stl-hardware-verify:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: stl-hardware-verifier
+    volumes:
+      - ./scripts:/app/scripts:ro
+      - ./output:/app/output
+      - ./logs:/app/logs
+      - "./reference:/app/reference:ro"
+    environment:
+      - PYOPENGL_PLATFORM=osmesa
+    command: ["python", "/app/scripts/verify_hardware_fit.py"]
+    profiles:
+      - hardware
+
+  # Run complete pipeline
+  stl-pipeline:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: stl-pipeline
+    volumes:
+      - ./scripts:/app/scripts:ro
+      - ./output:/app/output
+      - ./logs:/app/logs
+      - "../model3d/ESPlay micro v2 case - 5592683/files:/app/input:ro"
+      - ./reference:/app/reference:ro
+    environment:
+      - MIN_WALL_THICKNESS=1.0
+      - MAX_WALL_THICKNESS=1.8
+      - PRESERVE_CENTERS=true
+      - FIX_METHOD=iterative
+      - PYOPENGL_PLATFORM=osmesa
+    command: ["python", "/app/scripts/run_pipeline.py"]
+    profiles:
+      - pipeline
