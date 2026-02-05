@@ -1,0 +1,20 @@
+{
+  "test_date": "2026-02-04T21:07:26.503367",
+  "num_fixed_parts": 9,
+  "num_original_parts": 9,
+  "centroids": {
+    "comparisons": [
+      {
+        "name": "A_B",
+        "original_centroid": [
+          39.4152020450587,
+          3.8317471098552973,
+          1.2580508849311343
+        ],
+        "fixed_centroid": [
+          39.4152020729646,
+          3.831747622153805,
+          1.2580508684685061
+        ],
+        "drift_mm": 5.133220413892097e-07,
+        "preserved": 
