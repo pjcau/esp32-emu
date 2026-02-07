@@ -1,165 +1,165 @@
-# ESP32-EMU - Console Retro Gaming DIY
+# ESP32-EMU - DIY Retro Gaming Console
 
-Progetto personale per la costruzione di una console di emulazione retro gaming basata su ESP32 WROVER, utilizzando il firmware ESPlay Retro Emulation.
+Personal project for building a retro gaming emulation console based on ESP32 WROVER, using the ESPlay Retro Emulation firmware.
 
-## Panoramica
+## Overview
 
-Questo progetto documenta la costruzione di una console portatile per emulare sistemi retro gaming classici, basata sull'hardware ESPlay Micro e sul firmware open source di [pebri86](https://github.com/pebri86/esplay-retro-emulation).
+This project documents the build of a handheld console for emulating classic retro gaming systems, based on the ESPlay Micro hardware and the open source firmware by [pebri86](https://github.com/pebri86/esplay-retro-emulation).
 
-## Emulatori Supportati
+## Supported Emulators
 
-- **Nofrendo** - Emulatore NES/Nintendo
-- **GNUBoy** - GameBoy e GameBoy Color
-- **SMSPlusGX** - Sega Master System, Game Gear e Coleco Vision
-- **Atari** - Sistemi Atari
+- **Nofrendo** - NES/Nintendo Emulator
+- **GNUBoy** - GameBoy and GameBoy Color
+- **SMSPlusGX** - Sega Master System, Game Gear and Coleco Vision
+- **Atari** - Atari Systems
 - **PC Engine** - NEC PC Engine/TurboGrafx
 - **ZX-Spectrum** - Sinclair ZX Spectrum
-- **MSX** - Standard MSX
+- **MSX** - MSX Standard
 
-> Nota: A causa dei 4MB di Flash ROM, solo 3 emulatori possono essere precaricati contemporaneamente.
+> Note: Due to the 4MB Flash ROM, only 3 emulators can be preloaded at the same time.
 
-## Funzionalita Aggiuntive
+## Additional Features
 
-- Menu in-game per tutti gli emulatori
-- Audio Player integrato (WAV, MP3, OGG, FLAC)
-- Launcher ESPlay con interfaccia UGUI
-- WiFi e Bluetooth 4 BLE integrati
+- In-game menu for all emulators
+- Built-in audio player (WAV, MP3, OGG, FLAC)
+- ESPlay Launcher with UGUI interface
+- Built-in WiFi and Bluetooth 4 BLE
 
-## Specifiche Tecniche (ESPlay Micro)
+## Technical Specifications (ESPlay Micro)
 
-| Componente       | Specifica                   |
-| ---------------- | --------------------------- |
-| Processore       | ESP32 WROVER dual-core      |
-| Flash            | 4MB integrato               |
-| PSRAM            | 4MB integrato               |
-| Display          | 2.4" ILI9341 TFT Panel      |
-| Audio DAC        | UDA1334A I2S                |
-| Jack Audio       | 3.5mm                       |
-| Storage          | Slot microSD (SDMMC 1-line) |
-| Caricatore       | TP4056 Li-Po integrato      |
-| USB-Serial       | CH340C                      |
-| Dimensioni PCB   | 100 x 50 mm                 |
-| Porta Espansione | I2C                         |
+| Component      | Specification               |
+| -------------- | --------------------------- |
+| Processor      | ESP32 WROVER dual-core      |
+| Flash          | 4MB built-in                |
+| PSRAM          | 4MB built-in                |
+| Display        | 2.4" ILI9341 TFT Panel      |
+| Audio DAC      | UDA1334A I2S                |
+| Audio Jack     | 3.5mm                       |
+| Storage        | microSD slot (SDMMC 1-line) |
+| Charger        | TP4056 Li-Po built-in       |
+| USB-Serial     | CH340C                      |
+| PCB Dimensions | 100 x 50 mm                 |
+| Expansion Port | I2C                         |
 
-## Lista Componenti da Acquistare
+## Bill of Materials
 
-### 1. Scheda Principale - ESPlay Micro
-- **Prodotto**: ESPlay Micro - Console DIY ESP32 WROVER
-- **Prezzo**: ~27 EUR
+### 1. Main Board - ESPlay Micro
+- **Product**: ESPlay Micro - DIY Console ESP32 WROVER
+- **Price**: ~27 EUR
 - **Link**: [AliExpress](https://it.aliexpress.com/item/1005010451380752.html)
-- Include: 1x ESPlay Micro, 1x Cavo USB, 1x Scheda SD
+- Includes: 1x ESPlay Micro, 1x USB Cable, 1x SD Card
 
-### 2. Batteria LiPo
-- **Prodotto**: Batteria ai polimeri di litio 3.7V 5000mAh (955565)
-- **Prezzo**: ~8 EUR
+### 2. LiPo Battery
+- **Product**: 3.7V 5000mAh Lithium Polymer Battery (955565)
+- **Price**: ~8 EUR
 - **Link**: [AliExpress](https://it.aliexpress.com/item/1005008867815394.html)
 
-### 3. Scheda MicroSD (opzionale, per ROM aggiuntive)
-- **Prodotto**: SanDisk Ultra Micro SD (32GB/64GB/128GB)
-- **Prezzo**: ~1 EUR (32GB)
+### 3. MicroSD Card (optional, for additional ROMs)
+- **Product**: SanDisk Ultra Micro SD (32GB/64GB/128GB)
+- **Price**: ~1 EUR (32GB)
 - **Link**: [AliExpress](https://it.aliexpress.com/item/1005007498167692.html)
 
-### Costo Hardware Totale: 35 EUR
+### Total Hardware Cost: 35 EUR
 
-## Case/Scocca 3D
+## 3D Printed Case
 
-Partendo dal modello originale "ESPlay Micro V2 Case" di PierreGG, ho sviluppato un **case custom V7** generato parametricamente tramite script Python + trimesh, ottimizzato per la stampa 3D.
+Starting from the original "ESPlay Micro V2 Case" model by PierreGG, I developed a **custom V7 case** generated parametrically via Python + trimesh scripts, optimized for 3D printing.
 
-- **Modello originale**: [Thingiverse - ESPlay Micro V2 Case](https://www.thingiverse.com/thing:5592683)
-- **Case custom V7**: `model_3d_cover_v1/scripts/build_v7.py` (generazione automatica via Docker)
-- **Output**: `model_3d_cover_v1/output/v7/` (STL per stampa + GLB per visualizzazione)
+- **Original model**: [Thingiverse - ESPlay Micro V2 Case](https://www.thingiverse.com/thing:5592683)
+- **Custom V7 case**: `model_3d_cover_v1/scripts/build_v7.py` (automatic generation via Docker)
+- **Output**: `model_3d_cover_v1/output/v7/` (STL for printing + GLB for viewing)
 
-### Case V7 - Caratteristiche
+### V7 Case - Features
 
-| Caratteristica | Dettaglio |
+| Feature | Detail |
 | --- | --- |
-| Top shell | Piatto superiore solido con cutout precisi per schermo, D-pad (croce), pulsanti (tondi) |
-| Bottom shell | Profondita ottimizzata (19.3mm), batteria contro parete interna |
-| Viti | M3 a incasso (countersunk) nel bottom, flush con la superficie |
-| Pulsanti | Flangia di ritenzione 1mm per incastro tra board e top body |
-| Porte | USB-C, audio jack, SD card slot, shoulder L/R |
-| Dimensioni esterne | 103.3 x 58.3 x 27.3 mm |
+| Top shell | Solid top plate with precise cutouts for screen, D-pad (cross), buttons (round) |
+| Bottom shell | Optimized depth (19.3mm), battery against inner wall |
+| Screws | Countersunk M3 in the bottom, flush with the surface |
+| Buttons | 1mm retention flange for snap-fit between board and top body |
+| Ports | USB-C, audio jack, SD card slot, shoulder L/R |
+| External dimensions | 103.3 x 58.3 x 27.3 mm |
 
-### Assembly Chiusa
+### Closed Assembly
 
-![Assembly chiusa - vista isometrica](docs/images/assembly_closed_front_iso.png)
+![Closed assembly - isometric view](docs/images/assembly_closed_front_iso.png)
 
-![Assembly chiusa - vista dall'alto](docs/images/assembly_closed_top.png)
+![Closed assembly - top view](docs/images/assembly_closed_top.png)
 
-### Assembly Esplosa
+### Exploded Assembly
 
-![Assembly esplosa - vista isometrica](docs/images/assembly_open_front_iso.png)
+![Exploded assembly - isometric view](docs/images/assembly_open_front_iso.png)
 
-![Assembly esplosa - vista frontale](docs/images/assembly_open_front.png)
+![Exploded assembly - front view](docs/images/assembly_open_front.png)
 
-### Top Body - Dettaglio Cutout
+### Top Body - Cutout Detail
 
-![Top body V7 - dettaglio](docs/images/top_body_v7_detail.png)
+![Top body V7 - detail](docs/images/top_body_v7_detail.png)
 
-### Come Generare il Case
+### How to Generate the Case
 
 ```bash
 cd model_3d_cover_v1
 docker compose run --rm cover-tool /workspace/scripts/build_v7.py
 ```
 
-I file STL per la stampa vengono generati in `output/v7/`:
-- `top_body_v7.stl` - Scocca superiore
-- `bottom_body_v7.stl` - Scocca inferiore
-- `btn_assy_1_v7.stl` - Assembly pulsanti sinistri (D-pad + Start/Select)
-- `btn_assy_2_v7.stl` - Assembly pulsanti destri (A/B/X)
-- `shoulder_l.stl` / `shoulder_r.stl` - Tasti spalla
+STL files for printing are generated in `output/v7/`:
+- `top_body_v7.stl` - Top shell
+- `bottom_body_v7.stl` - Bottom shell
+- `btn_assy_1_v7.stl` - Left button assembly (D-pad + Start/Select)
+- `btn_assy_2_v7.stl` - Right button assembly (A/B/X)
+- `shoulder_l.stl` / `shoulder_r.stl` - Shoulder buttons
 
-### Stampa 3D
+### 3D Printing
 
-Ho utilizzato un **servizio di stampa 3D online** per la realizzazione del case.
+I used an **online 3D printing service** for manufacturing the case.
 
-- **Costo stampa**: 30 EUR
-- Include tutti i pezzi necessari per il case
+- **Printing cost**: 30 EUR
+- Includes all necessary parts for the case
 
-### Materiali Necessari per il Case
-- 4x viti M3 da 15mm
-- Protettore schermo (opzionale): taglio laser su acrilico 3mm (file SVG incluso)
+### Required Materials for the Case
+- 4x M3 15mm screws
+- Screen protector (optional): laser-cut 3mm acrylic (SVG file included)
 
-## Riepilogo Costi
+## Cost Summary
 
-| Voce                              | Costo      |
+| Item                              | Cost       |
 | --------------------------------- | ---------- |
-| Hardware (ESPlay + Batteria + SD) | 35 EUR     |
-| Stampa 3D Case                    | 30 EUR     |
-| **Totale Progetto**               | **65 EUR** |
+| Hardware (ESPlay + Battery + SD)  | 35 EUR     |
+| 3D Printed Case                   | 30 EUR     |
+| **Total Project Cost**            | **65 EUR** |
 
-## Risorse e Link Utili
+## Resources and Useful Links
 
-| Risorsa                  | Link                                                                                         |
-| ------------------------ | -------------------------------------------------------------------------------------------- |
-| Firmware ESPlay          | [GitHub - pebri86/esplay-retro-emulation](https://github.com/pebri86/esplay-retro-emulation) |
-| Documentazione Ufficiale | [Makerfabs - ESPlay Micro](https://www.makerfabs.com/esplay-micro.html)                      |
-| Case 3D                  | [Thingiverse - ESPlay Micro V2 Case](https://www.thingiverse.com/thing:5592683)              |
+| Resource               | Link                                                                                         |
+| ---------------------- | -------------------------------------------------------------------------------------------- |
+| ESPlay Firmware        | [GitHub - pebri86/esplay-retro-emulation](https://github.com/pebri86/esplay-retro-emulation) |
+| Official Documentation | [Makerfabs - ESPlay Micro](https://www.makerfabs.com/esplay-micro.html)                      |
+| 3D Case                | [Thingiverse - ESPlay Micro V2 Case](https://www.thingiverse.com/thing:5592683)              |
 
-## Istruzioni di Build del Firmware
+## Firmware Build Instructions
 
-### Requisiti
+### Requirements
 - ESP-IDF v3.3
-- FFmpeg installato e nel PATH
+- FFmpeg installed and in PATH
 
-### Procedura
-1. Clonare il repository: `git clone https://github.com/pebri86/esplay-retro-emulation.git`
-2. Editare `mkrelease.sh` con i percorsi corretti
-3. Eseguire `./mkrelease.sh` per generare `esplay-retro-emu.fw`
-4. Copiare il file in `esplay/firmware/` sulla scheda SD
-5. Avviare la console tenendo premuto il tasto B (modalita bootloader)
-6. Flashare il firmware dal menu
+### Procedure
+1. Clone the repository: `git clone https://github.com/pebri86/esplay-retro-emulation.git`
+2. Edit `mkrelease.sh` with the correct paths
+3. Run `./mkrelease.sh` to generate `esplay-retro-emu.fw`
+4. Copy the file to `esplay/firmware/` on the SD card
+5. Boot the console while holding the B button (bootloader mode)
+6. Flash the firmware from the menu
 
-## Istruzioni di Assemblaggio
+## Assembly Instructions
 
-1. Saldare la batteria LiPo ai connettori della scheda ESPlay Micro
-2. Inserire la scheda microSD con le ROM
-3. Stampare il case 3D
-4. Assemblare il tutto con le viti M3
-5. (Opzionale) Applicare il protettore schermo in acrilico
+1. Solder the LiPo battery to the ESPlay Micro board connectors
+2. Insert the microSD card with the ROMs
+3. 3D print the case
+4. Assemble everything with the M3 screws
+5. (Optional) Apply the acrylic screen protector
 
-## Struttura Directory SD Card
+## SD Card Directory Structure
 
 ```
 /
@@ -173,24 +173,24 @@ Ho utilizzato un **servizio di stampa 3D online** per la realizzazione del case.
 │   ├── sms/
 │   └── gg/
 └── music/
-    └── (file WAV, MP3, OGG, FLAC)
+    └── (WAV, MP3, OGG, FLAC files)
 ```
 
-## Note Legali
+## Legal Notes
 
-- Il firmware ESPlay e rilasciato sotto licenza MIT
-- Utilizzare solo ROM di giochi di cui si possiede l'originale
-- Il case 3D e rilasciato sotto licenza Creative Commons BY 4.0
+- The ESPlay firmware is released under the MIT License
+- Only use ROMs for games you legally own
+- The 3D case is released under the Creative Commons BY 4.0 License
 
 ## TODO
 
-- [x] Ordinare i componenti
-- [x] Stampare il case 3D
-- [ ] Assemblare l'hardware
-- [ ] Flashare il firmware
-- [ ] Testare gli emulatori
-- [ ] Documentare il processo con foto
+- [x] Order components
+- [x] 3D print the case
+- [ ] Assemble the hardware
+- [ ] Flash the firmware
+- [ ] Test the emulators
+- [ ] Document the process with photos
 
 ---
 
-*Progetto basato sul lavoro di [Fuji Pebri](https://github.com/pebri86) e della community ESPlay.*
+*Project based on the work of [Fuji Pebri](https://github.com/pebri86) and the ESPlay community.*
