@@ -1,0 +1,9 @@
+services:
+  cover-tool:
+    build: .
+    volumes:
+      - ./scripts:/workspace/scripts:ro
+      - ./original:/workspace/original:ro
+      - ../alignment-test/input:/workspace/ref:ro
+      - ./output:/workspace/output
+    entrypoint: ["python3"]

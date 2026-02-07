@@ -14,17 +14,6 @@ __pycache__/
 .Trashes
 Thumbs.db
 
-# Generated output - old versions (keep fixed_v2 and renders)
-stl-tools/output/fixed/
-stl-tools/output/analysis_report.json
-stl-tools/output/analysis_summary.txt
-stl-tools/output/pipeline_report.html
-stl-tools/output/assembly_complete.stl
-stl-tools/output/pcb_with_markers.stl
-
-# PCB generated STL files (keep source .brd and positions json)
-pcb/*.stl
-
 # IDE
 .idea/
 .vscode/
@@ -37,5 +26,18 @@ pcb/*.stl
 *.log
 *.bak
 
-# Archives (original models already extracted)
+# Archives
 *.zip
+
+# Claude Code local settings
+.claude/
+
+
+# Throwaway analysis/debug scripts
+model_3d_cover_v1/scripts/analyze_*.py
+model_3d_cover_v1/scripts/inspect_*.py
+model_3d_cover_v1/scripts/screen_check.py
+
+# stl-tools: all output is regenerable
+stl-tools/output/
+

@@ -1,0 +1,50 @@
+{
+  "version": "v7",
+  "changes": [
+    "Top shell: solid plate with per-cap cutouts (auto-detected from mesh)",
+    "Battery gap reduced to 0.3mm (pressed against internal wall)",
+    "Bottom depth reduced: 20.0 -> 19.3mm",
+    "Countersunk M3 screws preserved",
+    "SD card slot preserved"
+  ],
+  "top_cutouts": {
+    "screen": {
+      "w": 53.0,
+      "h": 44.0
+    },
+    "button_caps": [
+      {
+        "label": "dpad_cap_1",
+        "w": 8.5,
+        "h": 8.799999999999999
+      },
+      {
+        "label": "dpad_cap_2",
+        "w": 8.5,
+        "h": 8.5
+      },
+      {
+        "label": "ab_cap_1",
+        "w": 8.5,
+        "h": 8.5
+      },
+      {
+        "label": "ab_cap_2",
+        "w": 9.399999999999999,
+        "h": 9.7
+      },
+      {
+        "label": "ab_cap_4",
+        "w": 9.699999999999996,
+        "h": 9.400000000000004
+      }
+    ]
+  },
+  "depth": {
+    "bottom_shell": 19.3,
+    "bottom_total": 20.8,
+    "battery_gap": 0.3,
+    "constraint": "Battery 955565 (9.5mm) is the limiting factor"
+  },
+  "issues": []
+}

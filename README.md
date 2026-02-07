@@ -63,12 +63,52 @@ Questo progetto documenta la costruzione di una console portatile per emulare si
 
 ## Case/Scocca 3D
 
-Per la scocca stampata in 3D, utilizzo il modello "ESPlay Micro V2 Case" di PierreGG.
+Partendo dal modello originale "ESPlay Micro V2 Case" di PierreGG, ho sviluppato un **case custom V7** generato parametricamente tramite script Python + trimesh, ottimizzato per la stampa 3D.
 
-- **Link Thingiverse**: [ESPlay Micro V2 Case](https://www.thingiverse.com/thing:5592683)
-- **File 3D**: Inclusi in questo repository ([model3d/](model3d/))
-- **Software utilizzato**: Fusion360
-- **Licenza**: Creative Commons BY 4.0
+- **Modello originale**: [Thingiverse - ESPlay Micro V2 Case](https://www.thingiverse.com/thing:5592683)
+- **Case custom V7**: `model_3d_cover_v1/scripts/build_v7.py` (generazione automatica via Docker)
+- **Output**: `model_3d_cover_v1/output/v7/` (STL per stampa + GLB per visualizzazione)
+
+### Case V7 - Caratteristiche
+
+| Caratteristica | Dettaglio |
+| --- | --- |
+| Top shell | Piatto superiore solido con cutout precisi per schermo, D-pad (croce), pulsanti (tondi) |
+| Bottom shell | Profondita ottimizzata (19.3mm), batteria contro parete interna |
+| Viti | M3 a incasso (countersunk) nel bottom, flush con la superficie |
+| Pulsanti | Flangia di ritenzione 1mm per incastro tra board e top body |
+| Porte | USB-C, audio jack, SD card slot, shoulder L/R |
+| Dimensioni esterne | 103.3 x 58.3 x 27.3 mm |
+
+### Assembly Chiusa
+
+![Assembly chiusa - vista isometrica](docs/images/assembly_closed_front_iso.png)
+
+![Assembly chiusa - vista dall'alto](docs/images/assembly_closed_top.png)
+
+### Assembly Esplosa
+
+![Assembly esplosa - vista isometrica](docs/images/assembly_open_front_iso.png)
+
+![Assembly esplosa - vista frontale](docs/images/assembly_open_front.png)
+
+### Top Body - Dettaglio Cutout
+
+![Top body V7 - dettaglio](docs/images/top_body_v7_detail.png)
+
+### Come Generare il Case
+
+```bash
+cd model_3d_cover_v1
+docker compose run --rm cover-tool /workspace/scripts/build_v7.py
+```
+
+I file STL per la stampa vengono generati in `output/v7/`:
+- `top_body_v7.stl` - Scocca superiore
+- `bottom_body_v7.stl` - Scocca inferiore
+- `btn_assy_1_v7.stl` - Assembly pulsanti sinistri (D-pad + Start/Select)
+- `btn_assy_2_v7.stl` - Assembly pulsanti destri (A/B/X)
+- `shoulder_l.stl` / `shoulder_r.stl` - Tasti spalla
 
 ### Stampa 3D
 
