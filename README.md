@@ -1,5 +1,7 @@
 # ESP32-EMU - DIY Retro Gaming Console
 
+> **[View Interactive 3D Models](https://pjcau.github.io/esp32-emu/)**
+
 Personal project for building a retro gaming emulation console based on ESP32 WROVER, using the ESPlay Retro Emulation firmware.
 
 ## Overview
