@@ -1,161 +1,159 @@
 #!/usr/bin/env python3
 """
-Render assembly GLB files to PNG images for README documentation.
-Uses trimesh's offscreen rendering with pyrender/pyglet.
-Falls back to orthographic projection screenshots if GPU not available.
+Render assembly GLB files to high-quality PNG images.
+Uses pyrender with EGL offscreen rendering when available,
+falls back to a high-quality matplotlib renderer with proper
+face sorting and simulated lighting.
 """
+import os
+import sys
 import numpy as np
 import trimesh
 from pathlib import Path
-import json
+from PIL import Image
+import io
 
 
-def render_scene_to_png(glb_path, output_path, resolution=(1920, 1080),
-                        camera_angles=None, bg_color=(240, 240, 240, 255)):
-    """
-    Render a GLB scene to PNG from multiple angles.
-    Uses trimesh's built-in scene rendering.
-    """
-    print(f"  Loading {glb_path.name}...")
-    scene = trimesh.load(str(glb_path))
-
-    if not isinstance(scene, trimesh.Scene):
-        s = trimesh.Scene()
-        s.add_geometry(scene)
-        scene = s
-
-    # Get scene bounds for camera positioning
-    bounds = scene.bounds
-    center = (bounds[0] + bounds[1]) / 2
-    extent = (bounds[1] - bounds[0]).max()
-
-    if camera_angles is None:
-        camera_angles = {
-            "top_front": {"angles": (np.radians(35), 0, np.radians(25)),
-                          "label": "Vista frontale"},
-            "top": {"angles": (np.radians(5), 0, 0),
-                    "label": "Vista dall'alto"},
-            "side": {"angles": (np.radians(30), 0, np.radians(90)),
-                     "label": "Vista laterale"},
-        }
-
-    rendered = []
-    for view_name, view_cfg in camera_angles.items():
-        out_file = output_path / f"{glb_path.stem}_{view_name}.png"
-
-        try:
-            # Try pyrender-based rendering
-            png_data = render_with_pyrender(scene, resolution, view_cfg["angles"],
-                                           center, extent, bg_color)
-            if png_data is not None:
-                with open(out_file, 'wb') as f:
-                    f.write(png_data)
-                print(f"    {out_file.name} (pyrender)")
-                rendered.append(out_file)
-                continue
-        except Exception as e:
-            print(f"    pyrender failed: {e}")
-
-        try:
-            # Fallback: trimesh scene.save_image
-            png_data = scene.save_image(resolution=resolution, visible=False)
-            if png_data is not None and len(png_data) > 0:
-                with open(out_file, 'wb') as f:
-                    f.write(png_data)
-                print(f"    {out_file.name} (trimesh)")
-                rendered.append(out_file)
-                continue
-        except Exception as e:
-            print(f"    trimesh save_image failed: {e}")
-
-        try:
-            # Final fallback: matplotlib 2D projection
-            render_matplotlib(scene, out_file, view_cfg["angles"],
-                              center, extent, resolution)
-            print(f"    {out_file.name} (matplotlib)")
-            rendered.append(out_file)
-        except Exception as e:
-            print(f"    matplotlib failed: {e}")
-
-    return rendered
-
-
-def render_with_pyrender(scene, resolution, angles, center, extent, bg_color):
-    """Try rendering with pyrender (needs OpenGL)."""
-    try:
-        import pyrender
-        import os
-        os.environ['PYOPENGL_PLATFORM'] = 'egl'
-    except ImportError:
-        return None
-
-    pr_scene = pyrender.Scene(bg_color=np.array(bg_color[:3]) / 255.0,
-                              ambient_light=[0.3, 0.3, 0.3])
-
-    for name, geom in scene.geometry.items():
-        if isinstance(geom, trimesh.Trimesh):
-            mesh = pyrender.Mesh.from_trimesh(geom, smooth=True)
-            node_tf = scene.graph.get(name)[0] if name in scene.graph else np.eye(4)
-            pr_scene.add(mesh, pose=node_tf)
-
-    camera = pyrender.PerspectiveCamera(yfov=np.radians(45))
-    dist = extent * 2.0
-    cam_pos = center + np.array([
-        dist * np.sin(angles[2]) * np.cos(angles[0]),
-        dist * np.cos(angles[2]) * np.cos(angles[0]),
-        dist * np.sin(angles[0])
-    ])
-    cam_tf = np.eye(4)
-    cam_tf[:3, 3] = cam_pos
-    look_dir = center - cam_pos
-    look_dir /= np.linalg.norm(look_dir)
-    up = np.array([0, 0, 1])
-    right = np.cross(look_dir, up)
+def look_at(eye, target, up=np.array([0, 0, 1.0])):
+    """Build a 4x4 camera-to-world matrix (OpenGL convention: -Z forward)."""
+    fwd = np.array(target - eye, dtype=float)
+    fwd /= np.linalg.norm(fwd)
+    right = np.cross(fwd, up)
+    if np.linalg.norm(right) < 1e-6:
+        up = np.array([0, 1, 0.0])
+        right = np.cross(fwd, up)
     right /= np.linalg.norm(right)
-    up = np.cross(right, look_dir)
-    cam_tf[:3, 0] = right
-    cam_tf[:3, 1] = up
-    cam_tf[:3, 2] = -look_dir
+    true_up = np.cross(right, fwd)
+    mat = np.eye(4)
+    mat[:3, 0] = right
+    mat[:3, 1] = true_up
+    mat[:3, 2] = -fwd
+    mat[:3, 3] = eye
+    return mat
+
+
+def try_pyrender_render(scene_tm, output_path, resolution, elevation_deg,
+                        azimuth_deg, dist_factor, bg_color):
+    """Try rendering with pyrender + EGL. Returns True on success."""
+    try:
+        os.environ['PYOPENGL_PLATFORM'] = 'egl'
+        import pyrender
+    except Exception:
+        return False
+
+    bounds = scene_tm.bounds
+    center = (bounds[0] + bounds[1]) / 2
+    extent = np.linalg.norm(bounds[1] - bounds[0])
+
+    pr_scene = pyrender.Scene(
+        bg_color=bg_color,
+        ambient_light=[0.25, 0.25, 0.25],
+    )
+
+    for name, geom in scene_tm.geometry.items():
+        if not isinstance(geom, trimesh.Trimesh):
+            continue
+        try:
+            tf_tuple = scene_tm.graph.get(name)
+            node_tf = tf_tuple[0] if tf_tuple is not None else np.eye(4)
+        except Exception:
+            node_tf = np.eye(4)
+        try:
+            pr_mesh = pyrender.Mesh.from_trimesh(geom, smooth=True)
+        except Exception:
+            pr_mesh = pyrender.Mesh.from_trimesh(geom, smooth=False)
+        pr_scene.add(pr_mesh, pose=node_tf)
+
+    elev = np.radians(elevation_deg)
+    azim = np.radians(azimuth_deg)
+    dist = extent * dist_factor
+
+    eye = center + dist * np.array([
+        np.cos(elev) * np.sin(azim),
+        -np.cos(elev) * np.cos(azim),
+        np.sin(elev),
+    ])
+
+    cam_tf = look_at(eye, center)
+    aspect = resolution[0] / resolution[1]
+    camera = pyrender.PerspectiveCamera(yfov=np.radians(35), aspectRatio=aspect)
     pr_scene.add(camera, pose=cam_tf)
 
-    light = pyrender.DirectionalLight(color=[1, 1, 1], intensity=3.0)
-    pr_scene.add(light, pose=cam_tf)
+    # 3-point lighting
+    for angle_off, intensity in [(0.5, 4.0), (-1.2, 2.0), (3.14, 1.5)]:
+        ld = center + dist * 1.2 * np.array([
+            np.cos(elev + 0.3) * np.sin(azim + angle_off),
+            -np.cos(elev + 0.3) * np.cos(azim + angle_off),
+            np.sin(elev + 0.3),
+        ])
+        lt = look_at(ld, center)
+        pr_scene.add(pyrender.DirectionalLight(color=[1, 1, 1], intensity=intensity),
+                      pose=lt)
 
-    renderer = pyrender.OffscreenRenderer(*resolution)
-    color, _ = renderer.render(pr_scene)
-    renderer.delete()
+    try:
+        # Render at 2x resolution for antialiasing, then downsample
+        ss_factor = 2
+        ss_res = (resolution[0] * ss_factor, resolution[1] * ss_factor)
+        renderer = pyrender.OffscreenRenderer(*ss_res)
+        color, _ = renderer.render(pr_scene,
+                                    flags=pyrender.RenderFlags.SHADOWS_DIRECTIONAL)
+        renderer.delete()
+        img = Image.fromarray(color)
+        # Downsample with high-quality Lanczos filter (antialiasing)
+        img = img.resize(resolution, Image.LANCZOS)
+        img.save(str(output_path), format='PNG', optimize=True)
+        return True
+    except Exception as e:
+        print(f"      pyrender render failed: {e}")
+        return False
 
-    from PIL import Image
-    import io
-    img = Image.fromarray(color)
-    buf = io.BytesIO()
-    img.save(buf, format='PNG')
-    return buf.getvalue()
 
-
-def render_matplotlib(scene, output_path, angles, center, extent, resolution):
-    """Render using matplotlib 3D projection (always works, no GPU needed)."""
+def render_matplotlib_hq(scene_tm, output_path, resolution, elevation_deg,
+                         azimuth_deg, dist_factor, bg_color_rgb):
+    """
+    High-quality matplotlib renderer with:
+    - ALL faces rendered (no subsampling)
+    - Painter's algorithm (z-sorting)
+    - Phong-like diffuse lighting simulation
+    - Edge hints for light-colored surfaces
+    """
     import matplotlib
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
     from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
-    fig = plt.figure(figsize=(resolution[0]/100, resolution[1]/100), dpi=100)
+    bg = tuple(c / 255.0 for c in bg_color_rgb[:3])
+    dpi = 150
+    fig = plt.figure(figsize=(resolution[0] / dpi, resolution[1] / dpi), dpi=dpi)
     ax = fig.add_subplot(111, projection='3d')
 
-    # Collect all geometry
-    for name, geom in scene.geometry.items():
+    bounds = scene_tm.bounds
+    center = (bounds[0] + bounds[1]) / 2
+    extent = np.linalg.norm(bounds[1] - bounds[0])
+
+    # Light direction (from camera-ish position)
+    elev = np.radians(elevation_deg)
+    azim = np.radians(azimuth_deg)
+    light_dir = np.array([
+        np.cos(elev + 0.2) * np.sin(azim + 0.3),
+        -np.cos(elev + 0.2) * np.cos(azim + 0.3),
+        np.sin(elev + 0.2),
+    ])
+    light_dir /= np.linalg.norm(light_dir)
+
+    all_polys = []
+    all_colors = []
+    all_edge_colors = []
+    all_z_order = []
+
+    for name, geom in scene_tm.geometry.items():
         if not isinstance(geom, trimesh.Trimesh):
             continue
 
-        # Get transform
         try:
-            tf = scene.graph.get(name)
-            if tf is not None:
-                tf = tf[0]
-            else:
-                tf = np.eye(4)
-        except:
+            tf_tuple = scene_tm.graph.get(name)
+            tf = tf_tuple[0] if tf_tuple is not None else np.eye(4)
+        except Exception:
             tf = np.eye(4)
 
         verts = geom.vertices.copy()
@@ -164,46 +162,116 @@ def render_matplotlib(scene, output_path, angles, center, extent, resolution):
 
         faces = geom.faces
 
-        # Get face colors
+        # Get base colors
         if hasattr(geom.visual, 'face_colors') and len(geom.visual.face_colors) == len(faces):
-            fc = geom.visual.face_colors[:, :3] / 255.0
+            base_colors = geom.visual.face_colors[:, :3] / 255.0
         elif hasattr(geom.visual, 'main_color'):
             c = geom.visual.main_color[:3] / 255.0
-            fc = np.tile(c, (len(faces), 1))
+            base_colors = np.tile(c, (len(faces), 1))
         else:
-            fc = np.tile([0.7, 0.7, 0.7], (len(faces), 1))
+            base_colors = np.tile([0.7, 0.7, 0.7], (len(faces), 1))
 
-        # Subsample faces for performance (max 2000 per geometry)
-        if len(faces) > 2000:
-            idx = np.random.choice(len(faces), 2000, replace=False)
-            faces = faces[idx]
-            fc = fc[idx]
+        # Compute face normals for lighting
+        v0 = verts[faces[:, 0]]
+        v1 = verts[faces[:, 1]]
+        v2 = verts[faces[:, 2]]
+        normals = np.cross(v1 - v0, v2 - v0)
+        norms = np.linalg.norm(normals, axis=1, keepdims=True)
+        norms[norms < 1e-10] = 1
+        normals = normals / norms
+
+        # Phong-like diffuse lighting
+        diffuse = np.abs(np.dot(normals, light_dir))
+        # Ambient + diffuse
+        shade = 0.35 + 0.65 * diffuse
+        shaded_colors = base_colors * shade[:, np.newaxis]
+        shaded_colors = np.clip(shaded_colors, 0, 1)
 
         polys = verts[faces]
-        poly3d = Poly3DCollection(polys, alpha=0.95)
-        poly3d.set_facecolor(fc)
-        poly3d.set_edgecolor('none')
+        face_centers = polys.mean(axis=1)
+
+        # Edge color: slightly darker for depth cues
+        brightness = base_colors.mean(axis=1)
+        edge_colors = np.where(
+            brightness[:, np.newaxis] > 0.85,
+            np.clip(base_colors * 0.7, 0, 1),  # darker edges for light surfaces
+            np.full_like(base_colors, 0.0)  # no visible edges for dark surfaces (set to 'none' below)
+        )
+
+        for i in range(len(faces)):
+            all_polys.append(polys[i])
+            all_colors.append(shaded_colors[i])
+            all_z_order.append(face_centers[i, 2])
+            if brightness[i] > 0.85:
+                all_edge_colors.append((*edge_colors[i], 0.15))
+            else:
+                all_edge_colors.append((0, 0, 0, 0))
+
+    # Sort by Z (painter's algorithm) - draw farthest first
+    if not all_polys:
+        print("      No geometry to render!")
+        return
+
+    order = np.argsort(all_z_order)
+    all_polys = [all_polys[i] for i in order]
+    all_colors = [all_colors[i] for i in order]
+    all_edge_colors = [all_edge_colors[i] for i in order]
+
+    # Batch draw in chunks for performance
+    chunk_size = 5000
+    for start in range(0, len(all_polys), chunk_size):
+        end = min(start + chunk_size, len(all_polys))
+        poly3d = Poly3DCollection(all_polys[start:end], alpha=1.0)
+        poly3d.set_facecolor(all_colors[start:end])
+        poly3d.set_edgecolor(all_edge_colors[start:end])
+        poly3d.set_linewidth(0.1)
         ax.add_collection3d(poly3d)
 
-    # Set view
-    elev = np.degrees(angles[0])
-    azim = np.degrees(angles[2])
-    ax.view_init(elev=elev, azim=azim)
+    ax.view_init(elev=elevation_deg, azim=azimuth_deg)
 
-    margin = extent * 0.1
-    ax.set_xlim(center[0] - extent/2 - margin, center[0] + extent/2 + margin)
-    ax.set_ylim(center[1] - extent/2 - margin, center[1] + extent/2 + margin)
-    ax.set_zlim(center[2] - extent/2 - margin, center[2] + extent/2 + margin)
+    margin = extent * 0.05
+    half = extent / 2
+    ax.set_xlim(center[0] - half - margin, center[0] + half + margin)
+    ax.set_ylim(center[1] - half - margin, center[1] + half + margin)
+    ax.set_zlim(center[2] - half - margin, center[2] + half + margin)
 
     ax.set_box_aspect([1, 1, 1])
     ax.axis('off')
-    ax.set_facecolor((0.94, 0.94, 0.94))
-    fig.patch.set_facecolor((0.94, 0.94, 0.94))
+    ax.set_facecolor(bg)
+    fig.patch.set_facecolor(bg)
 
     plt.tight_layout(pad=0)
-    plt.savefig(str(output_path), dpi=100, bbox_inches='tight',
-                facecolor=fig.get_facecolor(), pad_inches=0.1)
+    plt.savefig(str(output_path), dpi=dpi, bbox_inches='tight',
+                facecolor=fig.get_facecolor(), pad_inches=0.05)
     plt.close(fig)
+
+
+def render_glb(glb_path, output_path, resolution=(1920, 1080),
+               elevation_deg=30, azimuth_deg=30, dist_factor=2.2,
+               bg_color=None):
+    """Render a GLB file to PNG."""
+    if bg_color is None:
+        bg_color = [235, 235, 235, 255]
+
+    scene_tm = trimesh.load(str(glb_path))
+    if not isinstance(scene_tm, trimesh.Scene):
+        s = trimesh.Scene()
+        s.add_geometry(scene_tm)
+        scene_tm = s
+
+    bg_float = [c / 255.0 for c in bg_color]
+
+    # Try pyrender first
+    ok = try_pyrender_render(scene_tm, output_path, resolution,
+                             elevation_deg, azimuth_deg, dist_factor, bg_float)
+    if ok:
+        print(f"      rendered with pyrender/EGL")
+        return
+
+    # Fallback: high-quality matplotlib
+    render_matplotlib_hq(scene_tm, output_path, resolution,
+                         elevation_deg, azimuth_deg, dist_factor, bg_color)
+    print(f"      rendered with matplotlib (HQ)")
 
 
 def main():
@@ -215,55 +283,60 @@ def main():
     print("RENDERING V7 ASSEMBLY IMAGES")
     print("=" * 60)
 
-    views = {
-        "front_iso": {"angles": (np.radians(30), 0, np.radians(30)),
-                      "label": "Front isometric"},
-        "top": {"angles": (np.radians(85), 0, np.radians(0)),
-                "label": "Top view"},
-        "front": {"angles": (np.radians(15), 0, np.radians(0)),
-                  "label": "Front view"},
-    }
-
     all_rendered = []
 
-    # Closed assembly
-    print("\n--- Closed Assembly ---")
+    # ── Closed assembly ──
     closed_path = output_dir / "assembly_closed.glb"
     if closed_path.exists():
-        rendered = render_scene_to_png(closed_path, img_dir,
-                                       resolution=(1600, 900),
-                                       camera_angles=views)
-        all_rendered.extend(rendered)
+        print("\n--- Closed Assembly ---")
+        views = {
+            "front_iso": {"elev": 30, "azim": 35, "dist": 2.0},
+            "top":       {"elev": 80, "azim": 5,  "dist": 2.2},
+        }
+        for vname, cfg in views.items():
+            out = img_dir / f"assembly_closed_{vname}.png"
+            print(f"  {out.name}...")
+            render_glb(closed_path, out, resolution=(2560, 1440),
+                       elevation_deg=cfg["elev"],
+                       azimuth_deg=cfg["azim"],
+                       dist_factor=cfg["dist"])
+            all_rendered.append(out)
+            print(f"    OK ({out.stat().st_size/1024:.0f} KB)")
 
-    # Open/exploded assembly
-    print("\n--- Open/Exploded Assembly ---")
+    # ── Open/exploded assembly ──
     open_path = output_dir / "assembly_open.glb"
     if open_path.exists():
-        rendered = render_scene_to_png(open_path, img_dir,
-                                       resolution=(1600, 900),
-                                       camera_angles=views)
-        all_rendered.extend(rendered)
+        print("\n--- Open/Exploded Assembly ---")
+        views = {
+            "front_iso": {"elev": 25, "azim": 30, "dist": 2.2},
+            "front":     {"elev": 12, "azim": 0,  "dist": 2.5},
+        }
+        for vname, cfg in views.items():
+            out = img_dir / f"assembly_open_{vname}.png"
+            print(f"  {out.name}...")
+            render_glb(open_path, out, resolution=(2560, 1440),
+                       elevation_deg=cfg["elev"],
+                       azimuth_deg=cfg["azim"],
+                       dist_factor=cfg["dist"])
+            all_rendered.append(out)
+            print(f"    OK ({out.stat().st_size/1024:.0f} KB)")
 
-    # Top body solo
-    print("\n--- Top Body Detail ---")
+    # ── Top body detail ──
     top_path = output_dir / "top_body_v7.glb"
     if top_path.exists():
-        rendered = render_scene_to_png(top_path, img_dir,
-                                       resolution=(1200, 900),
-                                       camera_angles={
-                                           "detail": {"angles": (np.radians(60), 0, np.radians(20)),
-                                                      "label": "Top body detail"},
-                                       })
-        all_rendered.extend(rendered)
+        print("\n--- Top Body Detail ---")
+        out = img_dir / "top_body_v7_detail.png"
+        print(f"  {out.name}...")
+        render_glb(top_path, out, resolution=(2560, 1920),
+                   elevation_deg=55, azimuth_deg=25, dist_factor=2.0)
+        all_rendered.append(out)
+        print(f"    OK ({out.stat().st_size/1024:.0f} KB)")
 
-    print(f"\n--- Summary ---")
-    print(f"  Total images: {len(all_rendered)}")
-    for f in all_rendered:
-        sz = f.stat().st_size / 1024
-        print(f"  {f.name} ({sz:.0f} KB)")
-
+    # ── Summary ──
     print(f"\n{'='*60}")
-    print("RENDERING COMPLETE")
+    print(f"RENDERING COMPLETE - {len(all_rendered)} images")
+    for f in all_rendered:
+        print(f"  {f.name} ({f.stat().st_size/1024:.0f} KB)")
     print(f"{'='*60}")
 
 

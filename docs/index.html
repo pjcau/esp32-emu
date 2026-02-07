@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESPlay Micro - DIY Retro Gaming Console</title>
+    <meta name="description" content="Interactive 3D showcase of the ESPlay Micro, a DIY retro gaming handheld console based on ESP32 WROVER">
+    <meta property="og:title" content="ESPlay Micro - DIY Retro Gaming Console">
+    <meta property="og:description" content="Interactive 3D model viewer for a custom ESP32-based retro gaming handheld">
+    <meta property="og:image" content="images/assembly_closed_front_iso.png">
+    <meta property="og:type" content="website">
+    <script type="module" src="https://unpkg.com/@google/model-viewer@3.5.0/dist/model-viewer.min.js"></script>
+    <style>
+        :root {
+            --bg-primary: #1a1a2e;
+            --bg-card: #16213e;
+            --bg-header: #0f3460;
+            --bg-viewer: #0d1b2a;
+            --accent: #00d9ff;
+            --accent-dim: #0088aa;
+            --text-primary: #eeeeee;
+            --text-secondary: #888888;
+            --border-radius: 12px;
+            --max-width: 1400px;
+            --transition: 0.3s ease;
+        }
+
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .container { max-width: var(--max-width); margin: 0 auto; padding: 0 24px; }
+
+        /* ---- NAV ---- */
+        nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(15, 52, 96, 0.9);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--bg-header);
+            padding: 12px 24px;
+        }
+        nav .nav-inner {
+            max-width: var(--max-width);
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        nav .logo {
+            color: var(--accent);
+            font-weight: 700;
+            font-size: 1.1rem;
+            text-decoration: none;
+        }
+        nav .nav-links { display: flex; gap: 24px; }
+        nav .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color var(--transition);
+        }
+        nav .nav-links a:hover { color: var(--accent); }
+
+        /* ---- HERO ---- */
+        .hero {
+            text-align: center;
+            padding: 80px 24px 60px;
+            background: linear-gradient(180deg, #0f3460 0%, #1a1a2e 100%);
+        }
+        .hero h1 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            color: var(--accent);
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+        .hero .tagline {
+            font-size: 1.15rem;
+            color: var(--text-secondary);
+            margin-bottom: 32px;
+        }
+        .stats-row {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 14px;
+        }
+        .stat-badge {
+            background: var(--bg-card);
+            border: 1px solid var(--bg-header);
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+        .stat-badge strong {
+            color: var(--accent);
+            display: block;
+            font-size: 1.05rem;
+        }
+
+        /* ---- SECTIONS ---- */
+        section { padding: 60px 0; }
+        .section-title {
+            font-size: 1.6rem;
+            color: var(--accent);
+            margin-bottom: 8px;
+        }
+        .section-subtitle {
+            color: var(--text-secondary);
+            margin-bottom: 32px;
+            font-size: 0.95rem;
+        }
+
+        /* ---- VIEWER CARDS ---- */
+        .assembly-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+        .viewer-card {
+            background: var(--bg-card);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            border: 1px solid var(--bg-header);
+            transition: border-color var(--transition);
+        }
+        .viewer-card:hover { border-color: var(--accent-dim); }
+        .card-header {
+            padding: 14px 20px;
+            background: var(--bg-header);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .card-header h3 {
+            color: var(--accent);
+            font-size: 1.05rem;
+        }
+        .card-header .hint {
+            color: var(--text-secondary);
+            font-size: 0.78rem;
+        }
+        .viewer-card model-viewer {
+            width: 100%;
+            height: 450px;
+            background: var(--bg-viewer);
+            --poster-color: transparent;
+        }
+
+        /* ---- COMPONENT GRID ---- */
+        .component-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        .component-card model-viewer {
+            width: 100%;
+            height: 280px;
+            background: var(--bg-viewer);
+            --poster-color: transparent;
+        }
+
+        /* ---- SPECS TABLE ---- */
+        .specs-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+        .specs-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--bg-card);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+        }
+        .specs-table th {
+            background: var(--bg-header);
+            color: var(--accent);
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .specs-table td {
+            padding: 10px 16px;
+            border-bottom: 1px solid rgba(15, 52, 96, 0.5);
+            font-size: 0.9rem;
+        }
+        .specs-table tr:last-child td { border-bottom: none; }
+        .specs-table td:first-child { color: var(--text-secondary); }
+
+        /* ---- GALLERY ---- */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 16px;
+        }
+        .gallery-item {
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            border: 1px solid var(--bg-header);
+            transition: transform var(--transition), border-color var(--transition);
+        }
+        .gallery-item:hover {
+            transform: scale(1.03);
+            border-color: var(--accent-dim);
+        }
+        .gallery-item img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        .gallery-item .caption {
+            padding: 8px 12px;
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            font-size: 0.82rem;
+            text-align: center;
+        }
+
+        /* ---- FOOTER ---- */
+        footer {
+            text-align: center;
+            padding: 30px 24px;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            border-top: 1px solid var(--bg-header);
+        }
+        footer a { color: var(--accent); text-decoration: none; }
+        footer a:hover { text-decoration: underline; }
+
+        /* ---- RESPONSIVE ---- */
+        @media (max-width: 900px) {
+            .assembly-grid { grid-template-columns: 1fr; }
+            .specs-grid { grid-template-columns: 1fr; }
+            nav .nav-links { display: none; }
+        }
+        @media (max-width: 600px) {
+            .hero { padding: 50px 16px 40px; }
+            .viewer-card model-viewer { height: 320px; }
+            .component-grid { grid-template-columns: 1fr 1fr; }
+            .component-card model-viewer { height: 200px; }
+            section { padding: 40px 0; }
+        }
+        @media (max-width: 400px) {
+            .component-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+    <div class="nav-inner">
+        <a href="#" class="logo">ESPlay Micro</a>
+        <div class="nav-links">
+            <a href="#assembly">Assembly</a>
+            <a href="#components">Components</a>
+            <a href="#specs">Specs</a>
+            <a href="#gallery">Gallery</a>
+        </div>
+    </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+    <h1>ESPlay Micro</h1>
+    <p class="tagline">DIY Retro Gaming Console &mdash; ESP32 WROVER</p>
+    <div class="stats-row">
+        <div class="stat-badge"><strong>7</strong>Emulators</div>
+        <div class="stat-badge"><strong>2.4"</strong>TFT Display</div>
+        <div class="stat-badge"><strong>WiFi</strong>+ BLE 4</div>
+        <div class="stat-badge"><strong>65 EUR</strong>Total Cost</div>
+        <div class="stat-badge"><strong>V7</strong>Custom Case</div>
+    </div>
+</header>
+
+<!-- ASSEMBLY SECTION -->
+<section id="assembly">
+    <div class="container">
+        <h2 class="section-title">3D Assembly</h2>
+        <p class="section-subtitle">Interactive 3D models &mdash; drag to rotate, scroll to zoom</p>
+
+        <div class="assembly-grid">
+            <!-- Closed Assembly -->
+            <div class="viewer-card">
+                <div class="card-header">
+                    <h3>Closed Assembly</h3>
+                    <span class="hint">Drag to rotate</span>
+                </div>
+                <model-viewer
+                    src="models/assembly_closed.glb"
+                    poster="images/assembly_closed_front_iso.png"
+                    camera-controls
+                    auto-rotate
+                    auto-rotate-delay="2000"
+                    rotation-per-second="15deg"
+                    shadow-intensity="1"
+                    environment-image="neutral"
+                    camera-orbit="45deg 55deg auto"
+                    interaction-prompt="auto"
+                    loading="lazy"
+                    alt="ESPlay Micro - Closed assembly">
+                </model-viewer>
+            </div>
+
+            <!-- Exploded Assembly -->
+            <div class="viewer-card">
+                <div class="card-header">
+                    <h3>Exploded View</h3>
+                    <span class="hint">Drag to rotate</span>
+                </div>
+                <model-viewer
+                    src="models/assembly_open.glb"
+                    poster="images/assembly_open_front_iso.png"
+                    camera-controls
+                    auto-rotate
+                    auto-rotate-delay="2000"
+                    rotation-per-second="15deg"
+                    shadow-intensity="1"
+                    environment-image="neutral"
+                    camera-orbit="45deg 55deg auto"
+                    interaction-prompt="auto"
+                    loading="lazy"
+                    alt="ESPlay Micro - Exploded assembly">
+                </model-viewer>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- COMPONENTS SECTION -->
+<section id="components" style="border-top: 1px solid var(--bg-header);">
+    <div class="container">
+        <h2 class="section-title">Individual Components</h2>
+        <p class="section-subtitle">Each part of the V7 custom case, PCB, and battery</p>
+
+        <div class="component-grid">
+            <!-- Top Shell -->
+            <div class="viewer-card component-card">
+                <div class="card-header">
+                    <h3>Top Shell</h3>
+                    <span class="hint">top_body_v7</span>
+                </div>
+                <model-viewer
+                    src="models/top_body_v7.glb"
+                    poster="images/top_body_v7_detail.png"
+                    camera-controls
+                    auto-rotate
+                    shadow-intensity="1"
+                    environment-image="neutral"
+                    camera-orbit="30deg 65deg auto"
+                    loading="lazy"
+                    alt="Top shell with screen and button cutouts">
+                </model-viewer>
+            </div>
+
+            <!-- Bottom Shell -->
+            <div class="viewer-card component-card">
+                <div class="card-header">
+                    <h3>Bottom Shell</h3>
+                    <span class="hint">bottom_body_v7</span>
+                </div>
+                <model-viewer
+                    src="models/bottom_body_v7.glb"
+                    camera-controls
+                    auto-rotate
+                    shadow-intensity="1"
+                    environment-image="neutral"
+                    camera-orbit="210deg 65deg auto"
+                    loading="lazy"
+                    alt="Bottom shell with battery compartment">
+                </model-viewer>
+            </div>
+
+            <!-- PCB Board -->
+            <div class="viewer-card component-card">
+                <div class="card-header">
+                    <h3>PCB Board</h3>
+                    <span class="hint">board_colored</span>
+                </div>
+                <model-viewer
+                    src="models/board_colored.glb"
+                    camera-controls
+                    auto-rotate
+                    shadow-intensity="1"
+                    environment-image="neutral"
+                    camera-orbit="0deg 30deg auto"
+                    loading="lazy"
+                    alt="ESPlay Micro PCB with components">
+                </model-viewer>
+            </div>
+
+            <!-- D-Pad + Start/Select -->
+            <div class="viewer-card component-card">
+                <div class="card-header">
+                    <h3>D-Pad + Start/Select</h3>
+                    <span class="hint">btn_assy_1</span>
+                </div>
+                <model-viewer
+                    src="models/btn_assy_1_colored.glb"
+                    camera-controls
+                    auto-rotate
+                    shadow-intensity="1"
+                    environment-image="neutral"
+                    camera-orbit="45deg 60deg auto"
+                    loading="lazy"
+                    alt="D-pad and Start/Select button assembly">
+                </model-viewer>
+            </div>
+
+            <!-- A/B/X Buttons -->
+            <div class="viewer-card component-card">
+                <div class="card-header">
+                    <h3>A/B/X Buttons</h3>
+                    <span class="hint">btn_assy_2</span>
+                </div>
+                <model-viewer
+                    src="models/btn_assy_2_colored.glb"
+                    camera-controls
+                    auto-rotate
+                    shadow-intensity="1"
+                    environment-image="neutral"
+                    camera-orbit="45deg 60deg auto"
+                    loading="lazy"
+                    alt="A, B, X button assembly">
+                </model-viewer>
+            </div>
+
+            <!-- Shoulder L -->
+            <div class="viewer-card component-card">
+                <div class="card-header">
+                    <h3>Shoulder L</h3>
+                    <span class="hint">shoulder_l</span>
+                </div>
+                <model-viewer
+                    src="models/shoulder_l.glb"
+                    camera-controls
+                    auto-rotate
+                    shadow-intensity="1"
+                    environment-image="neutral"
+                    camera-orbit="0deg 75deg auto"
+                    loading="lazy"
+                    alt="Left shoulder button">
+                </model-viewer>
+            </div>
+
+            <!-- Shoulder R -->
+            <div class="viewer-card component-card">
+                <div class="card-header">
+                    <h3>Shoulder R</h3>
+                    <span class="hint">shoulder_r</span>
+                </div>
+                <model-viewer
+                    src="models/shoulder_r.glb"
+                    camera-controls
+                    auto-rotate
+                    shadow-intensity="1"
+                    environment-image="neutral"
+                    camera-orbit="180deg 75deg auto"
+                    loading="lazy"
+                    alt="Right shoulder button">
+                </model-viewer>
+            </div>
+
+            <!-- Battery -->
+            <div class="viewer-card component-card">
+                <div class="card-header">
+                    <h3>Battery</h3>
+                    <span class="hint">Li-Po 955565</span>
+                </div>
+                <model-viewer
+                    src="models/battery.glb"
+                    camera-controls
+                    auto-rotate
+                    shadow-intensity="1"
+                    environment-image="neutral"
+                    camera-orbit="45deg 55deg auto"
+                    loading="lazy"
+                    alt="3.7V 5000mAh Li-Po battery">
+                </model-viewer>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- SPECS SECTION -->
+<section id="specs" style="border-top: 1px solid var(--bg-header);">
+    <div class="container">
+        <h2 class="section-title">Technical Specifications</h2>
+        <p class="section-subtitle">Hardware specs and V7 case details</p>
+
+        <div class="specs-grid">
+            <table class="specs-table">
+                <tr><th colspan="2">Hardware</th></tr>
+                <tr><td>Processor</td><td>ESP32 WROVER dual-core</td></tr>
+                <tr><td>Flash</td><td>4MB built-in</td></tr>
+                <tr><td>PSRAM</td><td>4MB built-in</td></tr>
+                <tr><td>Display</td><td>2.4" ILI9341 TFT Panel</td></tr>
+                <tr><td>Audio DAC</td><td>UDA1334A I2S</td></tr>
+                <tr><td>Audio Jack</td><td>3.5mm</td></tr>
+                <tr><td>Storage</td><td>microSD slot (SDMMC 1-line)</td></tr>
+                <tr><td>Charger</td><td>TP4056 Li-Po built-in</td></tr>
+                <tr><td>USB-Serial</td><td>CH340C</td></tr>
+                <tr><td>PCB Dimensions</td><td>100 x 50 mm</td></tr>
+                <tr><td>Expansion Port</td><td>I2C</td></tr>
+            </table>
+
+            <table class="specs-table">
+                <tr><th colspan="2">V7 Case</th></tr>
+                <tr><td>External Dimensions</td><td>103.3 x 58.3 x 27.3 mm</td></tr>
+                <tr><td>Wall Thickness</td><td>1.5 mm</td></tr>
+                <tr><td>Bottom Shell Depth</td><td>19.3 mm</td></tr>
+                <tr><td>Battery Gap</td><td>0.3 mm</td></tr>
+                <tr><td>Screen Cutout</td><td>53 x 44 mm</td></tr>
+                <tr><td>Screws</td><td>M3 countersunk, flush mount</td></tr>
+                <tr><td>Ports</td><td>USB-C, 3.5mm, SD, L/R</td></tr>
+                <tr><td>Battery</td><td>3.7V 5000mAh (955565)</td></tr>
+                <tr><td>Material</td><td>FDM 3D printed</td></tr>
+                <tr><td>Corner Radius</td><td>3.0 mm</td></tr>
+                <tr><td>Printing Cost</td><td>30 EUR</td></tr>
+            </table>
+        </div>
+    </div>
+</section>
+
+<!-- GALLERY SECTION -->
+<section id="gallery" style="border-top: 1px solid var(--bg-header);">
+    <div class="container">
+        <h2 class="section-title">Rendered Views</h2>
+        <p class="section-subtitle">Pre-rendered images from the build pipeline</p>
+
+        <div class="gallery-grid">
+            <div class="gallery-item">
+                <img src="images/assembly_closed_front_iso.png" alt="Closed assembly - isometric" loading="lazy">
+                <div class="caption">Closed - Isometric</div>
+            </div>
+            <div class="gallery-item">
+                <img src="images/assembly_closed_top.png" alt="Closed assembly - top view" loading="lazy">
+                <div class="caption">Closed - Top View</div>
+            </div>
+            <div class="gallery-item">
+                <img src="images/assembly_open_front_iso.png" alt="Exploded assembly - isometric" loading="lazy">
+                <div class="caption">Exploded - Isometric</div>
+            </div>
+            <div class="gallery-item">
+                <img src="images/assembly_open_front.png" alt="Exploded assembly - front view" loading="lazy">
+                <div class="caption">Exploded - Front View</div>
+            </div>
+            <div class="gallery-item">
+                <img src="images/top_body_v7_detail.png" alt="Top body detail" loading="lazy">
+                <div class="caption">Top Shell - Detail</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+    <div class="container">
+        <p>
+            ESPlay Micro &mdash; DIY Retro Gaming Console &mdash;
+            <a href="https://github.com/pjcau/esp32-emu" target="_blank" rel="noopener">GitHub Repository</a>
+        </p>
+        <p style="margin-top: 6px;">
+            Case: Creative Commons BY 4.0 &mdash;
+            Firmware: <a href="https://github.com/pebri86/esplay-retro-emulation" target="_blank" rel="noopener">MIT License</a> by Fuji Pebri
+        </p>
+    </div>
+</footer>
+
+</body>
+</html>
